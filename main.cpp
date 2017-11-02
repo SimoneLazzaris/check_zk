@@ -51,7 +51,7 @@ int parse_status(std::string status) {
 	std::vector<std::string> stat_array;
 	trim_if(status, boost::is_any_of("\n\r"));
 	split(stat_array, status, boost::is_any_of("\n\r"), boost::token_compress_on);
-	boost::regex expr{"(\\w+)\\s+(\\w+)"};
+	boost::regex expr("(\\w+)\\s+(\\w+)");
 
 	for (std::vector<std::string>::iterator i=stat_array.begin(); i!=stat_array.end(); i++) {
 		boost::smatch m;
@@ -68,7 +68,7 @@ int parse_status(std::string status) {
 }
 
 int main(int argc, char **argv) {
-	boost::program_options::options_description desc{"check_zk Options"};
+	boost::program_options::options_description desc("check_zk Options");
 	desc.add_options()
 		("help,h", "Help screen")
 		("host,H", boost::program_options::value<std::string>()->default_value("127.0.0.1"), "Host address")
