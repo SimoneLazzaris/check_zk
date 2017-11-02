@@ -12,30 +12,35 @@ const int NAGIOS_UNKNOWN=3;
 static bool verbose=false;
 
 std::string talk(std::string host, int port, std::string message) {
+	boost::system::error_code error;
 	boost::asio::io_service ios;
 	boost::asio::ip::tcp::endpoint endpoint;
 	boost::asio::ip::tcp::socket socket(ios);
-
+	boost::asio::ip::tcp::resolver res( ios );
+	
 	try {
-		endpoint=boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(host), port);
+		boost::asio::ip::tcp::resolver::query q(host,"");
+		boost::asio::ip::tcp::resolver::iterator ip1=res.resolve( q, error );
+		if (error!=0) return std::string("ERROR RESOLVING: ")+error.message();
+		endpoint = *ip1;
+		endpoint.port(port);
 	}
 	catch (boost::system::system_error& e) {
-		std::cerr << "Error while resolving: " << e.what() << std::endl;
-		return std::string("ERROR RESOLVING") + e.what();
+		if (verbose) std::cout << "Error while resolving: " << e.what() << std::endl;
+		return std::string("ERROR RESOLVING: ") + e.what();
 	}
 	
 	try {
 		socket.connect(endpoint);
 	}
 	catch (boost::system::system_error& e) {
-		std::cerr << "Error while connecting: " << e.what() << std::endl;
-		return std::string("ERROR CONNECTING") + e.what();
+		if (verbose) std::cout << "Error while connecting: " << e.what() << std::endl;
+		return std::string("ERROR CONNECTING: ") + e.what();
 	}
 	
 	boost::array<char, 128> buf;
 	boost::array<char, 4096> readbuf;
 	std::copy(message.begin(),message.end(),buf.begin());
-	boost::system::error_code error;
 	socket.write_some(boost::asio::buffer(buf, message.size()), error);
 	if (error!=0) return "ERROR WRITING";
 	int rsize=socket.read_some(boost::asio::buffer(readbuf, readbuf.size()),error);
@@ -72,7 +77,6 @@ int main(int argc, char **argv) {
 	desc.add_options()
 		("help,h", "Help screen")
 		("host,H", boost::program_options::value<std::string>()->default_value("127.0.0.1"), "Host address")
-// 		("verbose,v", boost::program_options::value<bool>()->default_value(false), "Verbose output")
 		("verbose,v", "Verbose output")
 		("port,p", boost::program_options::value<int>()->default_value(2181), "Port");
 
