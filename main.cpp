@@ -2,6 +2,7 @@
 #include <boost/array.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/system/error_code.hpp>
 #include <boost/regex.hpp>
 #include <iostream>
 
@@ -21,7 +22,7 @@ std::string talk(std::string host, int port, std::string message) {
 	try {
 		boost::asio::ip::tcp::resolver::query q(host,"");
 		boost::asio::ip::tcp::resolver::iterator ip1=res.resolve( q, error );
-		if (error!=0) return std::string("ERROR RESOLVING: ")+error.message();
+		if (error!=boost::system::errc::success) return std::string("ERROR RESOLVING: ")+error.message();
 		endpoint = *ip1;
 		endpoint.port(port);
 	}
@@ -42,9 +43,9 @@ std::string talk(std::string host, int port, std::string message) {
 	boost::array<char, 4096> readbuf;
 	std::copy(message.begin(),message.end(),buf.begin());
 	socket.write_some(boost::asio::buffer(buf, message.size()), error);
-	if (error!=0) return "ERROR WRITING";
+	if (error!=boost::system::errc::success) return "ERROR WRITING";
 	int rsize=socket.read_some(boost::asio::buffer(readbuf, readbuf.size()),error);
-	if (error!=0) return "ERROR READING";
+	if (error!=boost::system::errc::success) return "ERROR READING";
 	socket.close();
 	return std::string(readbuf.begin(),readbuf.begin()+rsize);
 }
